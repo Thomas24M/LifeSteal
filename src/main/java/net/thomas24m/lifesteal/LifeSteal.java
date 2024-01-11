@@ -2,6 +2,7 @@ package net.thomas24m.lifesteal;
 
 import net.fabricmc.api.ModInitializer;
 
+import net.thomas24m.lifesteal.util.ModRegistries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,5 +13,7 @@ public class LifeSteal implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		LOGGER.info("Hello Fabric world!");
+
+		ModRegistries.registerModStuff();
 	}
 }
