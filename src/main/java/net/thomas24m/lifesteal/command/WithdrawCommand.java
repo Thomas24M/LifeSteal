@@ -21,35 +21,34 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
 import net.thomas24m.lifesteal.LifeSteal;
+import net.thomas24m.lifesteal.util.LifeStealUtils;
 
 public class WithdrawCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
         dispatcher.register(CommandManager.literal("withdraw")
                 .then(CommandManager.argument("count", IntegerArgumentType.integer(1))
-                .executes(context -> WithdrawCommand.run(context, IntegerArgumentType.getInteger(context, "count")))));
+                        .executes(context -> WithdrawCommand.run(context, IntegerArgumentType.getInteger(context, "count")))));
     }
 
-    private static int run(CommandContext<ServerCommandSource> context, int count) throws CommandSyntaxException {
-        LifeSteal.LOGGER.info("Works");
-
+    private static int run(CommandContext<ServerCommandSource> context, int count) {
         ServerPlayerEntity player = context.getSource().getPlayer();
         assert player != null;
 
+        int minMaxHealth = ((int) ((Math.max(1, player.getWorld().getGameRules().getInt(LifeSteal.MINPLAYERHEALTH)) / 2d) + 0.6d)) * 2;
+
         EntityAttributeInstance health = player.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
         assert health != null;
-        health.setBaseValue(health.getValue() - 2d * count);
 
-        ItemStack item = new ItemStack(Items.NETHER_STAR, count);
+        int currentFullHearts = ((int) health.getBaseValue()) / 2;
 
-        NbtCompound nbt = new NbtCompound();
-        nbt.putBoolean("lifesteal.heart", true);
-        item.setNbt(nbt);
+        double newValue = Math.max(currentFullHearts - count, minMaxHealth / 2) * 2 + ((int) health.getBaseValue() % 2);
 
-        item.setCustomName(Text.literal("Heart").setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.RED)));
+        int changeInHearts = (int) (health.getBaseValue() - newValue) / 2;
+        health.setBaseValue(newValue);
 
-        player.giveItemStack(item);
+        LifeStealUtils.giveItem(player, LifeStealUtils.heartItem(changeInHearts));
 
-        context.getSource().sendFeedback(() -> Text.literal("Withdrew %d %s".formatted(count, count > 1 ? "hearts" : "heart")), false);
+        context.getSource().sendFeedback(() -> Text.literal("Withdrew %d %s".formatted(changeInHearts, changeInHearts > 1 ? "hearts" : "heart")), false);
         return 1;
     }
 }
